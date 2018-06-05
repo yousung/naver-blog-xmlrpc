@@ -2,8 +2,6 @@
 
 네이버 블로그 xmlrpc API
 
-MIT licensed.
-
 #### Naver Xmlrpc API ####
 
 - [관련 도움글](https://help.naver.com/support/contents/contents.nhn?serviceNo=520&categoryNo=1812)
@@ -49,3 +47,6 @@ $naverBlog->delBlog($postId);
 ```
 
 `TODO : phpunit`
+
+
+MIT licensed.
