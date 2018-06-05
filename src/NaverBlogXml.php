@@ -114,9 +114,9 @@ class NaverBlogXml
     }
 
     /**
-     * @param              $title    [required] 제목
-     * @param              $context  [required] 내용
-     * @param null|string  $category [null] 카테고리 (띄어쓰기까지 주의)
+     * @param                   $title    [required] 제목
+     * @param                   $context  [required] 내용
+     * @param null|string       $category [null] 카테고리 (띄어쓰기까지 주의)
      * @param null|array|string $tags     [null] 태그
      *
      * @return array
@@ -138,6 +138,14 @@ class NaverBlogXml
         }
 
         return $struct;
+    }
+
+    /**
+     * @param bool $isSecret 공개 여부 [true:공개, false:비공개]
+     */
+    public function setSecret($isSecret = true)
+    {
+        $this->secret = $isSecret;
     }
 
     /**
