@@ -2,7 +2,7 @@
     "name": "lovizu/naver-blog-xmlrpc",
     "description": "Naver Blog Xmlprc API",
     "license": "MIT",
-    "keywords": ["naver", "xmlprc", "api"],
+    "keywords": ["naver", "xmlprc", "api", "blog"],
     "authors": [
         {
             "name": "lovizu",
