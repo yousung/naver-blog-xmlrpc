@@ -1,0 +1,21 @@
+{
+    "name": "lovizu/naver-blog-xmlrpc",
+    "description": "Naver Blog Xmlprc API",
+    "license": "MIT",
+    "keywords": ["naver", "xmlprc", "api"],
+    "authors": [
+        {
+            "name": "lovizu",
+            "email": "help@lovizu.com"
+        }
+    ],
+    "require": {
+        "phpxmlrpc/phpxmlrpc": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lovizu\\NaverXmlRpc\\": "src"
+        }
+    },
+    "minimum-stability": "dev"
+}
