@@ -6,10 +6,12 @@
     "authors": [
         {
             "name": "lovizu",
-            "email": "help@lovizu.com"
+            "email": "help@lovizu.com",
+            "homepage": "https://www.lovizu.com"
         }
     ],
     "require": {
+        "php": ">=5.5.0",
         "phpxmlrpc/phpxmlrpc": "^4.0"
     },
     "autoload": {
