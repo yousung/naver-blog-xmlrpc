@@ -48,5 +48,4 @@ $naverBlog->delBlog($postId);
 
 `TODO : phpunit`
 
-
 MIT licensed.
