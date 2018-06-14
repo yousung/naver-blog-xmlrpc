@@ -27,31 +27,39 @@ require 'vendor/autoload.php';
 
 $blogId = '[string] 아이디';
 $blogPass = '[string] API연결 암호';
-$isSecret = '[bool] 게시물 공개 여부';
-$naverBlog = new NaverBlogXml($blogId, $blogPass, $isSecret);
+$endPoint = '[string] 기본값 : https://api.blog.naver.com/xmlrpc';
+$naverBlog = new NaverBlogXml($blogId, $blogPass, $endPoint);
 
-// 글쓰기
-@ 제목 : [string]
-@ 내용 : [string] 안내-img 태그로 작성된 이미지는 모두 네이버로 업로드
-@ 카테고리 : [null|string] 주의-블로그 카테고리명과 띄어쓰기 까지 일치, 안내-미 입력시 기본 카테고리로 저장
-@ 태그 : [null|array|string] 안내-배열 혹은 ',' 로 태그 구분
-@ return : [integer] 포스트ID 안내-삭제, 수정할때 필요
-$naverBlog->newBlog('제목', '내용', '카테고리', '태그');
+// 기본사용
+// Chain Method setItem 추가
+// 제목과 내용을 작성하고 post()로 출력
+// 내용에 이미지가 들어있을 경우 자동으로 네이버 서버에 업로드합니다.
+// 작성 성공시 return 결과로 post id 출력 [수정, 삭제시 사용]
+$naverBlog->setItem('제목', '내용')->post();
 
+// 카테고리 추가시
+// Chain Method setCategory 추가
+// (string) 카테고리명 [띄어쓰기 주의]
+$naverBlog->setItem('제목', '내용')->setCategory('카테고리명')->post();
 
-// 글수정 (네이버 정책변경으로 글수정 불가, 기존글 삭제 후 새로 작성 로직)
-//@ 포스트ID : [integer]
-//@ 제목 : [string]
-//@ 내용 : [string] 안내-img 태그로 작성된 이미지는 모두 네이버로 업로드
-//@ 카테고리 : [null|string] 주의-블로그 카테고리명과 띄어쓰기 까지 일치, 안내-미 입력시 기본 카테고리로 저장
-//@ 태그 : [null|array|string] 안내-배열 혹은 ',' 로 태그 구분
-//@ return : [integer] 포스트ID 안내-삭제, 수정할때 필요
-$naverBlog->editBlog($postId, '제목', '내용', '카테고리' ,'태그');
+// 태그 추가
+// Chain Method setTags 추가
+// (string|array) 배열 혹은 ','로 구분하여 작성
+$naverBlog->setItem('제목', '내용')->setTags(['태그1', '태그2', '태그3'])->post();
+or
+$naverBlog->setItem('제목', '내용')->setTags('태그1,태그2,태그3')->post();
 
-// 글삭제
-//@ 포스트ID : [integer]
-//@ return : [array]
-$naverBlog->delBlog($postId);
+// 비공개글
+// Chain Method setSecret 추가
+$naverBlog->setItem('제목', '내용')->setSecret()->post();
+
+// 수정
+// (string|int) postId
+$naverBlog->setItem('제목', '내용')->post('postId');
+
+//삭제
+// (string|int) postId
+$naverBlog->delBlog('postId');
 ```
 
 `TODO : phpunit`

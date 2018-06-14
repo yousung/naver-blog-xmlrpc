@@ -62,18 +62,12 @@ class NaverBlogXml
     }
 
     /**
-     * @param string $category
-     *
+     * 카테고리 설정
+     * @param $category
      * @return $this
-     *
-     * @throws \Exception
      */
     public function setCategory($category)
     {
-        if (!$category || !is_string($category)) {
-            throw new \Exception('setCategory 항목 내용이 잘못되었습니다', 400);
-        }
-
         $this->category = $category;
 
         return $this;
@@ -100,9 +94,7 @@ class NaverBlogXml
     }
 
     /**
-     * 이미지 추출 및 업로드.
-     *
-     * @param $context
+     * 이미지 추출.
      *
      * @return mixed
      */
@@ -127,51 +119,45 @@ class NaverBlogXml
     }
 
     /**
-     * @param string $url [required] 이미지 URL
+     * 네이버 서버 이미지 업로드.
      *
-     * @return null|string $url
+     * @param string $url
+     *
+     * @return string $url
      */
     private function uploadMedia($url)
     {
-        try {
-            $name = basename($url);
-            $bits = file_get_contents($url);
-            $mime = getimagesize($url)['mime'];
+        $name = basename($url);
+        $bits = file_get_contents($url);
+        $mime = getimagesize($url)['mime'];
 
-            $method = 'metaWeblog.newMediaObject';
+        $method = 'metaWeblog.newMediaObject';
 
-            $struct = array(
-                'bits' => new Value($bits, 'base64'),
-                'type' => new Value($mime, 'string'),
-                'name' => new Value($name, 'string'),
-            );
+        $struct = array(
+            'bits' => new Value($bits, 'base64'),
+            'type' => new Value($mime, 'string'),
+            'name' => new Value($name, 'string'),
+        );
 
-            $media = array(
-                new Value($this->blogId, 'string'),
-                new Value($this->blogId, 'string'),
-                new Value($this->blogPass, 'string'),
-                new Value($struct, 'struct'),
-            );
+        $media = array(
+            new Value($this->blogId, 'string'),
+            new Value($this->blogId, 'string'),
+            new Value($this->blogPass, 'string'),
+            new Value($struct, 'struct'),
+        );
 
-            $result = $this->result($method, $media);
+        $result = $this->result($method, $media);
 
-            return $result['data']->me['struct']['url']->me['string'] ?: null;
-        } catch (\Exception $e) {
-            return null;
-        }
+        return $result['data']->me['struct']['url']->me['string'] ?: null;
     }
 
     /**
-     * @return array
+     * Struct 변환.
      *
-     * @throws \Exception
+     * @return array
      */
     private function getStruct()
     {
-        if (!$this->title || !$this->context) {
-            throw  new \Exception('필수항목이 누락되었습니다.', 400);
-        }
-
         $struct = [
             'title' => new Value($this->title, 'string'),
             'description' => new Value(nl2br($this->context), 'string'),
@@ -190,55 +176,66 @@ class NaverBlogXml
     }
 
     /**
+     * 비공개 포스트.
+     *
      * @param bool $isSecret
      *
      * @return $this
      */
-    public function setSecret($isSecret = true)
+    public function setSecret($isSecret = false)
     {
         $this->isView = $isSecret;
 
         return $this;
     }
 
+    /**
+     * 작성 [ int 수정, null 새로작성 ].
+     *
+     * @param int|null $postId
+     *
+     * @return mixed
+     */
     public function post($postId = null)
     {
-        try {
-            if ($postId) {
-                return $this->editBlog($postId);
-            } else {
-                return $this->newBlog();
-            }
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage(), $e->getCode());
+        if ($postId) {
+            return $this->editBlog($postId);
+        } else {
+            return $this->newBlog();
         }
     }
 
+    /**
+     * @return mixed
+     */
     public function newBlog()
     {
         $method = 'metaWeblog.newPost';
 
-        try {
-            $this->context = $this->getImages();
-            $struct = $this->getStruct();
+        $this->context = $this->getImages();
+        $struct = $this->getStruct();
 
-            $data = [
-               new Value($this->blogId, 'string'),
-               new Value($this->blogId, 'string'),
-               new Value($this->blogPass, 'string'),
-               new Value($struct, 'struct'),
-               new Value($this->isView, 'boolean'),
-           ];
+        $data = [
+            new Value($this->blogId, 'string'),
+            new Value($this->blogId, 'string'),
+            new Value($this->blogPass, 'string'),
+            new Value($struct, 'struct'),
+            new Value($this->isView, 'boolean'),
+        ];
 
-            $result = $this->result($method, $data);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage(), $e->getCode());
-        }
+        $result = $this->result($method, $data);
 
         return $result['data']->me['string'];
     }
 
-    private function delBlog($postId)
+    /**
+     * 삭제.
+     *
+     * @param int $postId
+     *
+     * @return array
+     */
+    public function delBlog($postId)
     {
         $method = 'blogger.deletePost';
 
@@ -256,13 +253,19 @@ class NaverBlogXml
         return $rtn;
     }
 
+    /**
+     * 수정
+     * - 네이버 정책으로 인하여 수정 불가
+     * - 삭제 후 새로 작성으로 변경.
+     *
+     * @param int $postId
+     *
+     * @return mixed
+     */
     private function editBlog($postId)
     {
         $this->delBlog($postId);
-        try {
-            return $this->newBlog();
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage(), $e->getCode());
-        }
+
+        return $this->newBlog();
     }
 }
