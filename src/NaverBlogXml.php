@@ -12,24 +12,71 @@ class NaverBlogXml
     private $blogPass;
     private $client;
     private $response;
-    private $secret;
+    private $isView;
+    private $title;
+    private $context;
+    private $category;
+    private $tags;
 
     /**
      * NaverBlogXml constructor.
      *
-     * @param        $blogId   [required] 블로그ID
-     * @param        $blogPass [required] API연결 암호
-     * @param        $secret   [nullable] 블로그 공개여부
-     * @param string $endPoint [nullable] API연결 URL
+     * @param        $blogId
+     * @param        $blogPass
+     * @param string $endPoint
      */
-    public function __construct($blogId, $blogPass, $secret = true, $endPoint = 'https://api.blog.naver.com/xmlrpc')
+    public function __construct($blogId, $blogPass, $endPoint = 'https://api.blog.naver.com/xmlrpc')
     {
         $this->blogId = $blogId;
         $this->blogPass = $blogPass;
-        $this->secret = $secret;
+        $this->isView = true;
         $this->client = new Client($endPoint);
         $this->client->return_type = 'json';
         $this->client->setSSLVerifyPeer(false);
+    }
+
+    /**
+     * @param string $title
+     * @param string $context
+     *
+     * @return $this
+     */
+    public function setItem($title = '제목', $context = '내용')
+    {
+        $this->title = $title;
+        $this->context = $context;
+
+        return $this;
+    }
+
+    /**
+     * @param null|array|string $tags [null] 태그
+     *
+     * @return $this
+     */
+    public function setTags($tags = [])
+    {
+        $this->tags = $tags;
+
+        return $this;
+    }
+
+    /**
+     * @param string $category
+     *
+     * @return $this
+     *
+     * @throws \Exception
+     */
+    public function setCategory($category)
+    {
+        if (!$category || !is_string($category)) {
+            throw new \Exception('setCategory 항목 내용이 잘못되었습니다', 400);
+        }
+
+        $this->category = $category;
+
+        return $this;
     }
 
     /**
@@ -59,8 +106,9 @@ class NaverBlogXml
      *
      * @return mixed
      */
-    private function getImages($context)
+    private function getImages()
     {
+        $context = $this->context;
         preg_match_all("/<img[^>]*src=[\"']?([^>\"']+)[\"']?[^>]*>/i", $context, $item);
         $images = [];
         if ($item[1] && count($item[1])) {
@@ -114,25 +162,26 @@ class NaverBlogXml
     }
 
     /**
-     * @param                   $title    [required] 제목
-     * @param                   $context  [required] 내용
-     * @param null|string       $category [null] 카테고리 (띄어쓰기까지 주의)
-     * @param null|array|string $tags     [null] 태그
-     *
      * @return array
+     *
+     * @throws \Exception
      */
-    private function getStruct($title, $context, $category = null, $tags = [])
+    private function getStruct()
     {
+        if (!$this->title || !$this->context) {
+            throw  new \Exception('필수항목이 누락되었습니다.', 400);
+        }
+
         $struct = [
-            'title' => new Value($title, 'string'),
-            'description' => new Value(nl2br($context), 'string'),
+            'title' => new Value($this->title, 'string'),
+            'description' => new Value(nl2br($this->context), 'string'),
         ];
 
-        if ($category) {
+        if ($category = $this->category) {
             $struct['categories'] = new Value(strip_tags(trim($category)), 'string');
         }
 
-        if ($tags) {
+        if ($tags = $this->tags) {
             $tags = is_array($tags) ? implode(',', $tags) : $tags;
             $struct['tags'] = new Value(strip_tags(trim($tags)), 'string');
         }
@@ -141,47 +190,55 @@ class NaverBlogXml
     }
 
     /**
-     * @param bool $isSecret 공개 여부 [true:공개, false:비공개]
+     * @param bool $isSecret
+     *
+     * @return $this
      */
     public function setSecret($isSecret = true)
     {
-        $this->secret = $isSecret;
+        $this->isView = $isSecret;
+
+        return $this;
     }
 
-    /**
-     * @param                   $title    [require] 제목
-     * @param                   $context  [require] 내용
-     * @param null|string       $category [null] 카테고리
-     * @param null|array|string $tags     [null] 태그
-     *
-     * @return array
-     */
-    public function newBlog($title, $context, $category = null, $tags = [])
+    public function post($postId = null)
+    {
+        try {
+            if ($postId) {
+                return $this->editBlog($postId);
+            } else {
+                return $this->newBlog();
+            }
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function newBlog()
     {
         $method = 'metaWeblog.newPost';
 
-        $context = $this->getImages($context);
-        $struct = $this->getStruct($title, $context, $category, $tags);
+        try {
+            $this->context = $this->getImages();
+            $struct = $this->getStruct();
 
-        $data = [
-            new Value($this->blogId, 'string'),
-            new Value($this->blogId, 'string'),
-            new Value($this->blogPass, 'string'),
-            new Value($struct, 'struct'),
-            new Value($this->secret, 'boolean'),
-        ];
+            $data = [
+               new Value($this->blogId, 'string'),
+               new Value($this->blogId, 'string'),
+               new Value($this->blogPass, 'string'),
+               new Value($struct, 'struct'),
+               new Value($this->isView, 'boolean'),
+           ];
 
-        $result = $this->result($method, $data);
+            $result = $this->result($method, $data);
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage(), $e->getCode());
+        }
 
         return $result['data']->me['string'];
     }
 
-    /**
-     * @param int $postId [required] postId
-     *
-     * @return array
-     */
-    public function delBlog($postId)
+    private function delBlog($postId)
     {
         $method = 'blogger.deletePost';
 
@@ -199,19 +256,13 @@ class NaverBlogXml
         return $rtn;
     }
 
-    /**
-     * @param int          $postId
-     * @param              $title
-     * @param              $context
-     * @param null         $category
-     * @param array|string $tags
-     *
-     * @return array
-     */
-    public function editBlog($postId, $title, $context, $category = null, $tags = [])
+    private function editBlog($postId)
     {
         $this->delBlog($postId);
-
-        return $this->newBlog($title, $context, $category, $tags);
+        try {
+            return $this->newBlog();
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage(), $e->getCode());
+        }
     }
 }
