@@ -55,6 +55,8 @@ $naverBlog->setItem('제목', '내용')->setSecret()->post();
 
 // 수정
 // (string|int) postId
+* 네이버 정책변경으로 인하여 xmlrpc로 수정불가
+* 현재 로직은 postId를 확인하여 기존 포스팅을 삭제하고 다시 작성하는 로직
 $naverBlog->setItem('제목', '내용')->post('postId');
 
 //삭제
