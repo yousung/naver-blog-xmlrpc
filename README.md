@@ -1,3 +1,7 @@
+# 2020년 5월 6일 부로 네이버의 API 서비스 종료로 인하여 해다 라이브러리 사용불가 합니다.
+- [관련 도움글] (https://m.blog.naver.com/blogpeople/221893702144)
+
+
 # PHP Naver Blog xmlrpc API #
 
 네이버 블로그 xmlrpc API
